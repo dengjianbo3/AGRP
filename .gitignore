@@ -1,0 +1,9 @@
+__pycache__
+milvus_db/*
+pickles/*
+test/
+tmp/*
+frontend\ChatGPT-Next-Web\.husky
+frontend\ChatGPT-Next-Web\.next 
+frontend\ChatGPT-Next-Web\node_modules
+frontend\ChatGPT-Next-Web\yarn.lock
