@@ -100,14 +100,16 @@ export function MessageSelector(props: {
   const isInSearchResult = (id: string) => {
     return searchInput.length === 0 || searchIds.has(id);
   };
+
   const doSearch = (text: string) => {
     const searchResults = new Set<string>();
     if (text.length > 0) {
-      messages.forEach((m) =>
-        getMessageTextContent(m).includes(text)
-          ? searchResults.add(m.id!)
-          : null,
-      );
+      messages.forEach((m) => {
+        const messageTextContent = getMessageTextContent(m).text;
+        if (messageTextContent.includes(text)) {
+          searchResults.add(m.id!);
+        }
+      });
     }
     setSearchIds(searchResults);
   };
@@ -222,7 +224,7 @@ export function MessageSelector(props: {
                   {new Date(m.date).toLocaleString()}
                 </div>
                 <div className={`${styles["content"]} one-line`}>
-                  {getMessageTextContent(m)}
+                  {getMessageTextContent(m).text}
                 </div>
               </div>
 

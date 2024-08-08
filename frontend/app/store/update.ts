@@ -10,7 +10,7 @@ import ChatGptIcon from "../icons/chatgpt.png";
 import Locale from "../locales";
 import { use } from "react";
 import { useAppConfig } from ".";
-import { ClientApi } from "../client/api";
+// import { ClientApi } from "../client/api";
 
 const ONE_MINUTE = 60 * 1000;
 const isApp = !!getClientConfig()?.isApp;
@@ -141,20 +141,6 @@ export const useUpdateStore = createPersistStore(
       set(() => ({
         lastUpdateUsage: Date.now(),
       }));
-
-      try {
-        const api = new ClientApi(ModelProvider.GPT);
-        const usage = await api.llm.usage();
-
-        if (usage) {
-          set(() => ({
-            used: usage.used,
-            subscription: usage.total,
-          }));
-        }
-      } catch (e) {
-        console.error((e as Error).message);
-      }
     },
   }),
   {

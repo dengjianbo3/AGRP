@@ -38,7 +38,6 @@ import { DEFAULT_MASK_AVATAR } from "../store/mask";
 import { prettyObject } from "../utils/format";
 import { EXPORT_MESSAGE_CLASS_NAME } from "../constant";
 import { getClientConfig } from "../config/client";
-import { type ClientApi, getClientApi } from "../client/api";
 import { getMessageTextContent } from "../utils";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
@@ -302,110 +301,110 @@ export function RenderExport(props: {
 
 
 
-export function PreviewActions(props: {
-  download: () => void;
-  copy: () => void;
-  showCopy?: boolean;
-  messages?: ChatMessage[];
-}) {
-  const [loading, setLoading] = useState(false);
-  const [shouldExport, setShouldExport] = useState(false);
-  const config = useAppConfig();
-  const onRenderMsgs = (msgs: ChatMessage[]) => {
-    setShouldExport(false);
+// export function PreviewActions(props: {
+//   download: () => void;
+//   copy: () => void;
+//   showCopy?: boolean;
+//   messages?: ChatMessage[];
+// }) {
+//   const [loading, setLoading] = useState(false);
+//   const [shouldExport, setShouldExport] = useState(false);
+//   const config = useAppConfig();
+//   const onRenderMsgs = (msgs: ChatMessage[]) => {
+//     setShouldExport(false);
 
-    const api: ClientApi = getClientApi(config.modelConfig.providerName);
+//     const api: ClientApi = getClientApi(config.modelConfig.providerName);
 
-    api
-      .share(msgs)
-      .then((res) => {
-        if (!res) return;
-        showModal({
-          title: Locale.Export.Share,
-          children: [
-            <input
-              type="text"
-              value={res}
-              key="input"
-              style={{
-                width: "100%",
-                maxWidth: "unset",
-              }}
-              readOnly
-              onClick={(e) => e.currentTarget.select()}
-            ></input>,
-          ],
-          actions: [
-            <IconButton
-              icon={<CopyIcon />}
-              text={Locale.Chat.Actions.Copy}
-              key="copy"
-              onClick={() => copyToClipboard(res)}
-            />,
-          ],
-        });
-        setTimeout(() => {
-          window.open(res, "_blank");
-        }, 800);
-      })
-      .catch((e) => {
-        console.error("[Share]", e);
-        showToast(prettyObject(e));
-      })
-      .finally(() => setLoading(false));
-  };
+//     api
+//       .share(msgs)
+//       .then((res) => {
+//         if (!res) return;
+//         showModal({
+//           title: Locale.Export.Share,
+//           children: [
+//             <input
+//               type="text"
+//               value={res}
+//               key="input"
+//               style={{
+//                 width: "100%",
+//                 maxWidth: "unset",
+//               }}
+//               readOnly
+//               onClick={(e) => e.currentTarget.select()}
+//             ></input>,
+//           ],
+//           actions: [
+//             <IconButton
+//               icon={<CopyIcon />}
+//               text={Locale.Chat.Actions.Copy}
+//               key="copy"
+//               onClick={() => copyToClipboard(res)}
+//             />,
+//           ],
+//         });
+//         setTimeout(() => {
+//           window.open(res, "_blank");
+//         }, 800);
+//       })
+//       .catch((e) => {
+//         console.error("[Share]", e);
+//         showToast(prettyObject(e));
+//       })
+//       .finally(() => setLoading(false));
+//   };
 
-  const share = async () => {
-    if (props.messages?.length) {
-      setLoading(true);
-      setShouldExport(true);
-    }
-  };
+//   const share = async () => {
+//     if (props.messages?.length) {
+//       setLoading(true);
+//       setShouldExport(true);
+//     }
+//   };
 
-  return (
-    <>
-      <div className={styles["preview-actions"]}>
-        {props.showCopy && (
-          <IconButton
-            text={Locale.Export.Copy}
-            bordered
-            shadow
-            icon={<CopyIcon />}
-            onClick={props.copy}
-          ></IconButton>
-        )}
-        <IconButton
-          text={Locale.Export.Download}
-          bordered
-          shadow
-          icon={<DownloadIcon />}
-          onClick={props.download}
-        ></IconButton>
-        <IconButton
-          text={Locale.Export.Share}
-          bordered
-          shadow
-          icon={loading ? <LoadingIcon /> : <ShareIcon />}
-          onClick={share}
-        ></IconButton>
-      </div>
-      <div
-        style={{
-          position: "fixed",
-          right: "200vw",
-          pointerEvents: "none",
-        }}
-      >
-        {shouldExport && (
-          <RenderExport
-            messages={props.messages ?? []}
-            onRender={onRenderMsgs}
-          />
-        )}
-      </div>
-    </>
-  );
-}
+//   return (
+//     <>
+//       <div className={styles["preview-actions"]}>
+//         {props.showCopy && (
+//           <IconButton
+//             text={Locale.Export.Copy}
+//             bordered
+//             shadow
+//             icon={<CopyIcon />}
+//             onClick={props.copy}
+//           ></IconButton>
+//         )}
+//         <IconButton
+//           text={Locale.Export.Download}
+//           bordered
+//           shadow
+//           icon={<DownloadIcon />}
+//           onClick={props.download}
+//         ></IconButton>
+//         <IconButton
+//           text={Locale.Export.Share}
+//           bordered
+//           shadow
+//           icon={loading ? <LoadingIcon /> : <ShareIcon />}
+//           onClick={share}
+//         ></IconButton>
+//       </div>
+//       <div
+//         style={{
+//           position: "fixed",
+//           right: "200vw",
+//           pointerEvents: "none",
+//         }}
+//       >
+//         {shouldExport && (
+//           <RenderExport
+//             messages={props.messages ?? []}
+//             onRender={onRenderMsgs}
+//           />
+//         )}
+//       </div>
+//     </>
+//   );
+// }
 
 function ExportAvatar(props: { avatar: string }) {
   if (props.avatar === DEFAULT_MASK_AVATAR) {
@@ -520,12 +519,6 @@ export function ImagePreviewer(props: {
 
   return (
     <div className={styles["image-previewer"]}>
-      <PreviewActions
-        copy={copy}
-        download={download}
-        showCopy={!isMobile}
-        messages={props.messages}
-      />
       <div
         className={`${styles["preview-body"]} ${styles["default-theme"]}`}
         ref={previewRef}
@@ -647,12 +640,6 @@ export function MarkdownPreviewer(props: {
   };
   return (
     <>
-      <PreviewActions
-        copy={copy}
-        download={download}
-        showCopy={true}
-        messages={props.messages}
-      />
       <div className="markdown-body">
         <pre className={styles["export-content"]}>{mdText}</pre>
       </div>
@@ -688,12 +675,6 @@ export function JsonPreviewer(props: {
 
   return (
     <>
-      <PreviewActions
-        copy={copy}
-        download={download}
-        showCopy={false}
-        messages={props.messages}
-      />
       <div className="markdown-body" onClick={copy}>
         <Markdown content={mdText} />
       </div>

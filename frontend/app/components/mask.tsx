@@ -22,7 +22,8 @@ import {
   useAppConfig,
   useChatStore,
 } from "../store";
-import { MultimodalContent, ROLES } from "../client/api";
+import {ROLES } from "../client/api";
+import { MultimodalContent } from "../store";
 import {
   Input,
   List,
@@ -48,7 +49,6 @@ import { Updater } from "../typing";
 import { ModelConfigList } from "./model-config";
 import { FileName, Path } from "../constant";
 import { BUILTIN_MASK_STORE } from "../masks";
-import { nanoid } from "nanoid";
 import {
   DragDropContext,
   Droppable,
@@ -250,7 +250,7 @@ function ContextPromptItem(props: {
         </>
       )}
       <Input
-        value={getMessageTextContent(props.prompt)}
+        value={getMessageTextContent(props.prompt).text}
         type="text"
         className={chatStyle["context-content"]}
         rows={focusingInput ? 5 : 1}
@@ -299,7 +299,8 @@ export function ContextPrompts(props: {
       const images = getMessageImages(context[i]);
       context[i] = prompt;
       if (images.length > 0) {
-        const text = getMessageTextContent(context[i]);
+        const textContent = getMessageTextContent(context[i]);
+        const text = textContent.text;
         const newContext: MultimodalContent[] = [{ type: "text", text }];
         for (const img of images) {
           newContext.push({ type: "image_url", image_url: { url: img } });
@@ -316,7 +317,7 @@ export function ContextPrompts(props: {
     const newContext = reorder(
       context,
       result.source.index,
-      result.destination.index,
+      result.destination.index
     );
     props.updateContext((context) => {
       context.splice(0, context.length, ...newContext);
@@ -357,7 +358,7 @@ export function ContextPrompts(props: {
                                 content: "",
                                 date: new Date().toLocaleString(),
                               }),
-                              i + 1,
+                              i + 1
                             );
                           }}
                         >
@@ -387,7 +388,7 @@ export function ContextPrompts(props: {
                     content: "",
                     date: "",
                   }),
-                  props.context.length,
+                  props.context.length
                 )
               }
             />
