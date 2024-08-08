@@ -1,11 +1,12 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { showToast } from "@/app/components/ui-lib";
-import { createMessage, ExtendedChatMessage , MultimodalContent} from "@/app/store";
+import { createMessage, ExtendedChatMessage, MultimodalContent } from "@/app/store";
 import { nanoid } from "nanoid";
 import { API_BASE_URL } from "@/app/constant";
-import { base64Image2Blob,} from "@/app/utils/chat";
+import { base64Image2Blob } from "@/app/utils/chat";
 
 export async function uploadFileToServer(
-  file: File, 
+  file: File,
   chatStore: any,
   dbName: string,
   chunkSize: string,
@@ -26,10 +27,10 @@ export async function uploadFileToServer(
       url = `${API_BASE_URL}/upload_file/upload_excel_or_csv`;
     } else if (["pdf", "doc", "docx", "png", "jpg", "jpeg"].includes(fileExt)) {
       url = `${API_BASE_URL}/upload_file/upload_doc`;
-      formData.append("db_name", dbName); 
-      formData.append("chunk_size", chunkSize); 
-      formData.append("chunk_overlap", chunkOverlap); 
-      formData.append("files", file); 
+      formData.append("db_name", dbName);
+      formData.append("chunk_size", chunkSize);
+      formData.append("chunk_overlap", chunkOverlap);
+      formData.append("files", file);
     } else {
       console.log("Unsupported file type");
       return;
@@ -130,5 +131,27 @@ export async function sendQueryToServer(
       date: new Date().toISOString(),
       id: nanoid(),
     }));
+  }
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { method, body } = req;
+
+  switch (method) {
+    case 'POST':
+      if (body.action === 'upload') {
+        await uploadFileToServer(body.file, body.chatStore, body.dbName, body.chunkSize, body.chunkOverlap);
+        res.status(200).json({ message: 'File uploaded successfully' });
+      } else if (body.action === 'query') {
+        await sendQueryToServer(body.userInput, body.chatStore, body.dbName, body.tableFileName, body.docFileName);
+        res.status(200).json({ message: 'Query sent successfully' });
+      } else {
+        res.setHeader('Allow', ['POST']);
+        res.status(405).end(`Method ${method} Not Allowed`);
+      }
+      break;
+    default:
+      res.setHeader('Allow', ['POST']);
+      res.status(405).end(`Method ${method} Not Allowed`);
   }
 }

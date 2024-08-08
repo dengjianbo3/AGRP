@@ -1,7 +1,7 @@
+"use client";
 import { useEffect, useState } from "react";
 import { showToast } from "./components/ui-lib";
 import Locale from "./locales";
-import { RequestMessage } from "./client/api";
 import { ChatMessage, MultimodalContent } from "@/app/store";
 
 export function trimTopic(topic: string) {

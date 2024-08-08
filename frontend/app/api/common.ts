@@ -4,7 +4,7 @@ import {
   OPENAI_BASE_URL,
   ServiceProvider,
 } from "../constant";
-import { isModelAvailableInServer } from "../utils/model";
+// import { isModelAvailableInServer } from "../utils/model";
 import { cloudflareAIGatewayUrl } from "../utils/cloudflare";
 
 const serverConfig = getServerSideConfig();
@@ -110,31 +110,31 @@ export async function requestOpenai(req: NextRequest) {
       const clonedBody = await req.text();
       fetchOptions.body = clonedBody;
 
-      const jsonBody = JSON.parse(clonedBody) as { model?: string };
+      // const jsonBody = JSON.parse(clonedBody) as { model?: string };
 
       // not undefined and is false
-      if (
-        isModelAvailableInServer(
-          serverConfig.customModels,
-          jsonBody?.model as string,
-          ServiceProvider.OpenAI as string,
-        ) ||
-        isModelAvailableInServer(
-          serverConfig.customModels,
-          jsonBody?.model as string,
-          ServiceProvider.Azure as string,
-        )
-      ) {
-        return NextResponse.json(
-          {
-            error: true,
-            message: `you are not allowed to use ${jsonBody?.model} model`,
-          },
-          {
-            status: 403,
-          },
-        );
-      }
+      // if (
+      //   isModelAvailableInServer(
+      //     serverConfig.customModels,
+      //     jsonBody?.model as string,
+      //     ServiceProvider.OpenAI as string,
+      //   ) ||
+      //   isModelAvailableInServer(
+      //     serverConfig.customModels,
+      //     jsonBody?.model as string,
+      //     ServiceProvider.Azure as string,
+      //   )
+      // ) {
+      //   return NextResponse.json(
+      //     {
+      //       error: true,
+      //       message: `you are not allowed to use ${jsonBody?.model} model`,
+      //     },
+      //     {
+      //       status: 403,
+      //     },
+      //   );
+      // }
     } catch (e) {
       console.error("[OpenAI] gpt4 filter", e);
     }

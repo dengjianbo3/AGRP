@@ -87,17 +87,13 @@ import {
   ServiceProvider,
 } from "../constant";
 import { Avatar } from "./emoji";
-import { ContextPrompts, MaskAvatar, MaskConfig } from "./mask";
+import { ContextPrompts, MaskAvatar } from "./mask";
 import { ChatCommandPrefix, useChatCommand, useCommand } from "../command";
 import { prettyObject } from "../utils/format";
 import { ExportMessageModal } from "./exporter";
 import { getClientConfig } from "../config/client";
-import { useAllModels } from "../utils/hooks";
-
-import {
-  uploadFileToServer,
-  sendQueryToServer,
-} from "../api/agentgo/route";
+// import { useAllModels } from "../utils/hooks";
+import { uploadFileToServer, sendQueryToServer } from "@/app/api/agentgo/api";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,

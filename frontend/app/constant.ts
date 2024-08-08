@@ -17,7 +17,8 @@ export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/";
 export const CACHE_URL_PREFIX = "/api/cache";
 export const UPLOAD_URL = `${CACHE_URL_PREFIX}/upload`;
 
-export const API_BASE_URL = "http://8.134.157.88:5000"; 
+// export const API_BASE_URL = "http://47.121.202.157:3389"; 
+export const API_BASE_URL = "https://agrp.cn"; 
 
 export enum Path {
   Home = "/",

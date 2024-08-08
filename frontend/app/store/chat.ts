@@ -10,21 +10,21 @@ import {
   DEFAULT_SYSTEM_TEMPLATE,
   KnowledgeCutOffDate,
   StoreKey,
-  SUMMARIZE_MODEL,
-  GEMINI_SUMMARIZE_MODEL,
+  // SUMMARIZE_MODEL,
+  // GEMINI_SUMMARIZE_MODEL,
 } from "../constant";
-import { getClientApi } from "../client/api";
+// import { getClientApi } from "../client/api";
 import type {
-  ClientApi,
-  RequestMessage,
+  // ClientApi,
+  // RequestMessage,
 } from "../client/api";
 import { ChatControllerPool } from "../client/controller";
 import { prettyObject } from "../utils/format";
 import { estimateTokenLength } from "../utils/token";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
-import { collectModelsWithDefaultModel } from "../utils/model";
-import { useAccessStore } from "./access";
+// import { collectModelsWithDefaultModel } from "../utils/model";
+// import { useAccessStore } from "./access";
 
 export type MultimodalContent = 
   | { type: 'text'; text: string }
@@ -100,25 +100,25 @@ function createEmptySession(): ChatSession {
   };
 }
 
-function getSummarizeModel(currentModel: string) {
-  if (currentModel.startsWith("gpt")) {
-    const configStore = useAppConfig.getState();
-    const accessStore = useAccessStore.getState();
-    const allModel = collectModelsWithDefaultModel(
-      configStore.models,
-      [configStore.customModels, accessStore.customModels].join(","),
-      accessStore.defaultModel,
-    );
-    const summarizeModel = allModel.find(
-      (m) => m.name === SUMMARIZE_MODEL && m.available,
-    );
-    return summarizeModel?.name ?? currentModel;
-  }
-  if (currentModel.startsWith("gemini")) {
-    return GEMINI_SUMMARIZE_MODEL;
-  }
-  return currentModel;
-}
+// function getSummarizeModel(currentModel: string) {
+//   if (currentModel.startsWith("gpt")) {
+//     const configStore = useAppConfig.getState();
+//     const accessStore = useAccessStore.getState();
+//     const allModel = collectModelsWithDefaultModel(
+//       configStore.models,
+//       [configStore.customModels, accessStore.customModels].join(","),
+//       accessStore.defaultModel,
+//     );
+//     const summarizeModel = allModel.find(
+//       (m) => m.name === SUMMARIZE_MODEL && m.available,
+//     );
+//     return summarizeModel?.name ?? currentModel;
+//   }
+//   if (currentModel.startsWith("gemini")) {
+//     return GEMINI_SUMMARIZE_MODEL;
+//   }
+//   return currentModel;
+// }
 
 function countMessages(msgs: ChatMessage[]) {
   return msgs.reduce(
@@ -317,7 +317,7 @@ export const useChatStore = createPersistStore(
           session.lastUpdate = Date.now();
         });
         get().updateStat(message);
-        get().summarizeSession();
+        // get().summarizeSession();
       },
 
       async onUserInput(content: string, attachImages?: string[]) {
@@ -373,56 +373,56 @@ export const useChatStore = createPersistStore(
           ]);
         });
 
-        const api: ClientApi = getClientApi(modelConfig.providerName);
-        api.llm.chat({
-          messages: sendMessages,
-          config: { ...modelConfig, stream: true },
-          onUpdate(message) {
-            botMessage.streaming = true;
-            if (message) {
-              botMessage.content = message;
-            }
-            get().updateCurrentSession((session) => {
-              session.messages = session.messages.concat();
-            });
-          },
-          onFinish(message) {
-            botMessage.streaming = false;
-            if (message) {
-              botMessage.content = message;
-              get().onNewMessage(botMessage);
-            }
-            ChatControllerPool.remove(session.id, botMessage.id);
-          },
-          onError(error) {
-            const isAborted = error.message.includes("aborted");
-            botMessage.content +=
-              "\n\n" +
-              prettyObject({
-                error: true,
-                message: error.message,
-              });
-            botMessage.streaming = false;
-            userMessage.isError = !isAborted;
-            botMessage.isError = !isAborted;
-            get().updateCurrentSession((session) => {
-              session.messages = session.messages.concat();
-            });
-            ChatControllerPool.remove(
-              session.id,
-              botMessage.id ?? messageIndex,
-            );
+        // const api: ClientApi = getClientApi(modelConfig.providerName);
+        // api.llm.chat({
+        //   messages: sendMessages,
+        //   config: { ...modelConfig, stream: true },
+        //   onUpdate(message) {
+        //     botMessage.streaming = true;
+        //     if (message) {
+        //       botMessage.content = message;
+        //     }
+        //     get().updateCurrentSession((session) => {
+        //       session.messages = session.messages.concat();
+        //     });
+        //   },
+        //   onFinish(message) {
+        //     botMessage.streaming = false;
+        //     if (message) {
+        //       botMessage.content = message;
+        //       get().onNewMessage(botMessage);
+        //     }
+        //     ChatControllerPool.remove(session.id, botMessage.id);
+        //   },
+        //   onError(error) {
+        //     const isAborted = error.message.includes("aborted");
+        //     botMessage.content +=
+        //       "\n\n" +
+        //       prettyObject({
+        //         error: true,
+        //         message: error.message,
+        //       });
+        //     botMessage.streaming = false;
+        //     userMessage.isError = !isAborted;
+        //     botMessage.isError = !isAborted;
+        //     get().updateCurrentSession((session) => {
+        //       session.messages = session.messages.concat();
+        //     });
+        //     ChatControllerPool.remove(
+        //       session.id,
+        //       botMessage.id ?? messageIndex,
+        //     );
 
-            console.error("[Chat] failed ", error);
-          },
-          onController(controller) {
-            ChatControllerPool.addController(
-              session.id,
-              botMessage.id ?? messageIndex,
-              controller,
-            );
-          },
-        });
+        //     console.error("[Chat] failed ", error);
+        //   },
+        //   onController(controller) {
+        //     ChatControllerPool.addController(
+        //       session.id,
+        //       botMessage.id ?? messageIndex,
+        //       controller,
+        //     );
+        //   },
+        // });
       },
 
       getMemoryPrompt() {
@@ -531,106 +531,106 @@ export const useChatStore = createPersistStore(
         });
       },
 
-      summarizeSession() {
-        const config = useAppConfig.getState();
-        const session = get().currentSession();
-        const modelConfig = session.mask.modelConfig;
+      // summarizeSession() {
+      //   const config = useAppConfig.getState();
+      //   const session = get().currentSession();
+      //   const modelConfig = session.mask.modelConfig;
 
-        const api: ClientApi = getClientApi(modelConfig.providerName);
+      //   const api: ClientApi = getClientApi(modelConfig.providerName);
 
-        const messages = session.messages;
+      //   const messages = session.messages;
 
-        const SUMMARIZE_MIN_LEN = 50;
-        if (
-          config.enableAutoGenerateTitle &&
-          session.topic === DEFAULT_TOPIC &&
-          countMessages(messages) >= SUMMARIZE_MIN_LEN
-        ) {
-          const topicMessages = messages.concat(
-            createMessage({
-              role: "user",
-              content: Locale.Store.Prompt.Topic,
-            }),
-          );
-          api.llm.chat({
-            messages: topicMessages,
-            config: {
-              model: getSummarizeModel(session.mask.modelConfig.model),
-              stream: false,
-            },
-            onFinish(message) {
-              get().updateCurrentSession(
-                (session) =>
-                  (session.topic =
-                    message.length > 0 ? trimTopic(message) : DEFAULT_TOPIC),
-              );
-            },
-          });
-        }
-        const summarizeIndex = Math.max(
-          session.lastSummarizeIndex,
-          session.clearContextIndex ?? 0,
-        );
-        let toBeSummarizedMsgs = messages
-          .filter((msg) => !msg.isError)
-          .slice(summarizeIndex);
+      //   const SUMMARIZE_MIN_LEN = 50;
+      //   if (
+      //     config.enableAutoGenerateTitle &&
+      //     session.topic === DEFAULT_TOPIC &&
+      //     countMessages(messages) >= SUMMARIZE_MIN_LEN
+      //   ) {
+      //     const topicMessages = messages.concat(
+      //       createMessage({
+      //         role: "user",
+      //         content: Locale.Store.Prompt.Topic,
+      //       }),
+      //     );
+      //     api.llm.chat({
+      //       messages: topicMessages,
+      //       config: {
+      //         model: getSummarizeModel(session.mask.modelConfig.model),
+      //         stream: false,
+      //       },
+      //       onFinish(message) {
+      //         get().updateCurrentSession(
+      //           (session) =>
+      //             (session.topic =
+      //               message.length > 0 ? trimTopic(message) : DEFAULT_TOPIC),
+      //         );
+      //       },
+      //     });
+      //   }
+      //   const summarizeIndex = Math.max(
+      //     session.lastSummarizeIndex,
+      //     session.clearContextIndex ?? 0,
+      //   );
+      //   let toBeSummarizedMsgs = messages
+      //     .filter((msg) => !msg.isError)
+      //     .slice(summarizeIndex);
 
-        const historyMsgLength = countMessages(toBeSummarizedMsgs);
+      //   const historyMsgLength = countMessages(toBeSummarizedMsgs);
 
-        if (historyMsgLength > modelConfig?.max_tokens ?? 4000) {
-          const n = toBeSummarizedMsgs.length;
-          toBeSummarizedMsgs = toBeSummarizedMsgs.slice(
-            Math.max(0, n - modelConfig.historyMessageCount),
-          );
-        }
-        const memoryPrompt = get().getMemoryPrompt();
-        if (memoryPrompt) {
-          toBeSummarizedMsgs.unshift(memoryPrompt);
-        }
+      //   if (historyMsgLength > modelConfig?.max_tokens ?? 4000) {
+      //     const n = toBeSummarizedMsgs.length;
+      //     toBeSummarizedMsgs = toBeSummarizedMsgs.slice(
+      //       Math.max(0, n - modelConfig.historyMessageCount),
+      //     );
+      //   }
+      //   const memoryPrompt = get().getMemoryPrompt();
+      //   if (memoryPrompt) {
+      //     toBeSummarizedMsgs.unshift(memoryPrompt);
+      //   }
 
-        const lastSummarizeIndex = session.messages.length;
+      //   const lastSummarizeIndex = session.messages.length;
 
-        console.log(
-          "[Chat History] ",
-          toBeSummarizedMsgs,
-          historyMsgLength,
-          modelConfig.compressMessageLengthThreshold,
-        );
+      //   console.log(
+      //     "[Chat History] ",
+      //     toBeSummarizedMsgs,
+      //     historyMsgLength,
+      //     modelConfig.compressMessageLengthThreshold,
+      //   );
 
-        if (
-          historyMsgLength > modelConfig.compressMessageLengthThreshold &&
-          modelConfig.sendMemory
-        ) {
-          const { max_tokens, ...modelcfg } = modelConfig;
-          api.llm.chat({
-            messages: toBeSummarizedMsgs.concat(
-              createMessage({
-                role: "system",
-                content: Locale.Store.Prompt.Summarize,
-                date: "",
-              }),
-            ),
-            config: {
-              ...modelcfg,
-              stream: true,
-              model: getSummarizeModel(session.mask.modelConfig.model),
-            },
-            onUpdate(message) {
-              session.memoryPrompt = message;
-            },
-            onFinish(message) {
-              console.log("[Memory] ", message);
-              get().updateCurrentSession((session) => {
-                session.lastSummarizeIndex = lastSummarizeIndex;
-                session.memoryPrompt = message;
-              });
-            },
-            onError(err) {
-              console.error("[Summarize] ", err);
-            },
-          });
-        }
-      },
+      //   if (
+      //     historyMsgLength > modelConfig.compressMessageLengthThreshold &&
+      //     modelConfig.sendMemory
+      //   ) {
+      //     const { max_tokens, ...modelcfg } = modelConfig;
+      //     api.llm.chat({
+      //       messages: toBeSummarizedMsgs.concat(
+      //         createMessage({
+      //           role: "system",
+      //           content: Locale.Store.Prompt.Summarize,
+      //           date: "",
+      //         }),
+      //       ),
+      //       config: {
+      //         ...modelcfg,
+      //         stream: true,
+      //         model: getSummarizeModel(session.mask.modelConfig.model),
+      //       },
+      //       onUpdate(message) {
+      //         session.memoryPrompt = message;
+      //       },
+      //       onFinish(message) {
+      //         console.log("[Memory] ", message);
+      //         get().updateCurrentSession((session) => {
+      //           session.lastSummarizeIndex = lastSummarizeIndex;
+      //           session.memoryPrompt = message;
+      //         });
+      //       },
+      //       onError(err) {
+      //         console.error("[Summarize] ", err);
+      //       },
+      //     });
+      //   }
+      // },
 
       updateStat(message: ChatMessage) {
         get().updateCurrentSession((session) => {
