@@ -43,7 +43,7 @@ import {
   DEFAULT_TOPIC,
   useAccessStore,
   ExtendedChatMessage,
-  MultimodalContent
+  MultimodalContent,
 } from "../store";
 
 import {
@@ -56,9 +56,7 @@ import {
   isVisionModel,
 } from "../utils";
 
-import {
-  uploadImage as uploadImageRemote,
-} from "@/app/utils/chat";
+import { uploadImage as uploadImageRemote } from "@/app/utils/chat";
 
 import dynamic from "next/dynamic";
 
@@ -109,16 +107,18 @@ export function base64Image2Blob(base64Data: string, contentType: string) {
   return new Blob([byteArray], { type: contentType });
 }
 
-function isTextContent(content: MultimodalContent): content is { type: 'text'; text: string } {
-  return content.type === 'text';
+function isTextContent(content: MultimodalContent): content is { type: "text"; text: string } {
+  return content.type === "text";
 }
 
-function isImageContent(content: MultimodalContent): content is { type: 'image_url'; image_url: { url: string } } {
-  return content.type === 'image_url';
+function isImageContent(content: MultimodalContent): content is { type: "image_url"; image_url: { url: string } } {
+  return content.type === "image_url";
 }
 
 const renderMessageContent = (message: ExtendedChatMessage) => {
-  const contentArray = Array.isArray(message.content) ? message.content : [{ type: 'text', text: message.content } as MultimodalContent];
+  const contentArray = Array.isArray(message.content)
+    ? message.content
+    : [{ type: "text", text: message.content } as MultimodalContent];
 
   return (
     <>
@@ -133,7 +133,6 @@ const renderMessageContent = (message: ExtendedChatMessage) => {
     </>
   );
 };
-
 
 function PromptToast(props: {
   showToast?: boolean;
@@ -415,7 +414,6 @@ export function ChatActions(props: {
 
   // switch model
   const currentModel = chatStore.currentSession().mask.modelConfig.model;
-
 
   const [showUploadImage, setShowUploadImage] = useState(false);
 
@@ -730,7 +728,6 @@ function _Chat() {
         setIsLoading(false);
       });
   };
-  
 
   const onPromptSelect = (prompt: RenderPrompt) => {
     setTimeout(() => {
@@ -905,13 +902,22 @@ function _Chat() {
               {
                 ...createMessage({
                   role: "assistant",
-                  content: "……",
+                  content: "🤔 正在思考……",
                 }),
                 preview: true,
+                date: new Date().toISOString(), // 强制将时间设置为当前时间
               },
             ]
           : [],
-      );
+      )
+      .sort((a, b) => {
+        // 检查是否有 preview 属性
+        if (a.preview && !b.preview) return 1; // a 是预览消息，放到后面
+        if (!a.preview && b.preview) return -1; // b 是预览消息，放到后面
+  
+        // 按时间顺序排序
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      });
   }, [context, isLoading, session.messages]);
 
   const [msgRenderIndex, _setMsgRenderIndex] = useState(
@@ -923,6 +929,7 @@ function _Chat() {
     _setMsgRenderIndex(newIndex);
   }
 
+  // 去除 reverse() 调用
   const messages = useMemo(() => {
     const endRenderIndex = Math.min(
       msgRenderIndex + 3 * CHAT_PAGE_SIZE,
@@ -1172,7 +1179,7 @@ function _Chat() {
             </div>
           </div>
         )}
-  
+
         <div className={`window-header-title ${styles["chat-body-title"]}`}>
           <div
             className={`window-header-main-title ${styles["chat-body-main-title"]}`}
@@ -1218,14 +1225,14 @@ function _Chat() {
             </div>
           )}
         </div>
-  
+
         <PromptToast
           showToast={!hitBottom}
           showModal={showPromptModal}
           setShowModal={setShowPromptModal}
         />
       </div>
-  
+
       <div
         className={styles["chat-body"]}
         ref={scrollRef}
@@ -1236,148 +1243,148 @@ function _Chat() {
           setAutoScroll(false);
         }}
       >
-      {messages.reverse().map((message, i) => {
-        const isUser = message.role === "user";
-        const isContext = i < context.length;
-        const showActions =
-          i > 0 &&
-          !(message.preview || message.content.length === 0) &&
-          !isContext;
-        const showTyping = message.preview || message.streaming;
+        {messages.map((message, i) => {
+          const isUser = message.role === "user";
+          const isContext = i < context.length;
+          const showActions =
+            i > 0 &&
+            !(message.preview || message.content.length === 0) &&
+            !isContext;
+          const showTyping = message.preview || message.streaming;
 
-        const shouldShowClearContextDivider = i === clearContextIndex - 1;
+          const shouldShowClearContextDivider = i === clearContextIndex - 1;
 
-        return (
-          <Fragment key={message.id}>
-            <div
-              className={
-                isUser ? styles["chat-message-user"] : styles["chat-message"]
-              }
-            >
-              <div className={styles["chat-message-container"]}>
-                <div className={styles["chat-message-header"]}>
-                  <div className={styles["chat-message-avatar"]}>
-                    <div className={styles["chat-message-edit"]}>
-                      <IconButton
-                        icon={<EditIcon />}
-                        onClick={async () => {
-                          const { text } = getMessageTextContent(message);
-                          const newMessage = await showPrompt(
-                            Locale.Chat.Actions.Edit,
-                            text,
-                            10,
-                          );
-                          let newContent: string | MultimodalContent[] =
-                            newMessage;
-                          const images = getMessageImages(message);
-                          if (images.length > 0) {
-                            newContent = [{ type: "text", text: newMessage }];
-                            for (let i = 0; i < images.length; i++) {
-                              newContent.push({
-                                type: "image_url",
-                                image_url: {
-                                  url: images[i],
-                                },
-                              });
+          return (
+            <Fragment key={message.id}>
+              <div
+                className={
+                  isUser ? styles["chat-message-user"] : styles["chat-message"]
+                }
+              >
+                <div className={styles["chat-message-container"]}>
+                  <div className={styles["chat-message-header"]}>
+                    <div className={styles["chat-message-avatar"]}>
+                      <div className={styles["chat-message-edit"]}>
+                        <IconButton
+                          icon={<EditIcon />}
+                          onClick={async () => {
+                            const { text } = getMessageTextContent(message);
+                            const newMessage = await showPrompt(
+                              Locale.Chat.Actions.Edit,
+                              text,
+                              10,
+                            );
+                            let newContent: string | MultimodalContent[] =
+                              newMessage;
+                            const images = getMessageImages(message);
+                            if (images.length > 0) {
+                              newContent = [{ type: "text", text: newMessage }];
+                              for (let i = 0; i < images.length; i++) {
+                                newContent.push({
+                                  type: "image_url",
+                                  image_url: {
+                                    url: images[i],
+                                  },
+                                });
+                              }
                             }
-                          }
-                          chatStore.updateCurrentSession((session) => {
-                            const m = session.mask.context
-                              .concat(session.messages)
-                              .find((m) => m.id === message.id);
-                            if (m) {
-                              m.content = newContent;
-                            }
-                          });
-                        }}
-                      ></IconButton>
-                    </div>
-                    {isUser ? (
-                      <Avatar avatar={config.avatar} />
-                    ) : (
-                      <>
-                        {["system"].includes(message.role) ? (
-                          <Avatar avatar="2699-fe0f" />
-                        ) : (
-                          <MaskAvatar
-                            avatar={session.mask.avatar}
-                            model={
-                              message.model || session.mask.modelConfig.model
-                            }
-                          />
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  {showActions && (
-                    <div className={styles["chat-message-actions"]}>
-                      <div className={styles["chat-input-actions"]}>
-                        {message.streaming ? (
-                          <ChatAction
-                            text={Locale.Chat.Actions.Stop}
-                            icon={<StopIcon />}
-                            onClick={() => onUserStop(message.id ?? i)}
-                          />
-                        ) : (
-                          <>
-                            <ChatAction
-                              text={Locale.Chat.Actions.Retry}
-                              icon={<ResetIcon />}
-                              onClick={() => onResend(message)}
-                            />
-
-                            <ChatAction
-                              text={Locale.Chat.Actions.Delete}
-                              icon={<DeleteIcon />}
-                              onClick={() => onDelete(message.id ?? i)}
-                            />
-
-                            <ChatAction
-                              text={Locale.Chat.Actions.Pin}
-                              icon={<PinIcon />}
-                              onClick={() => onPinMessage(message)}
-                            />
-                            <ChatAction
-                              text={Locale.Chat.Actions.Copy}
-                              icon={<CopyIcon />}
-                              onClick={() =>
-                                copyToClipboard(
-                                  getMessageTextContent(message).text,
-                                )
+                            chatStore.updateCurrentSession((session) => {
+                              const m = session.mask.context
+                                .concat(session.messages)
+                                .find((m) => m.id === message.id);
+                              if (m) {
+                                m.content = newContent;
+                              }
+                            });
+                          }}
+                        ></IconButton>
+                      </div>
+                      {isUser ? (
+                        <Avatar avatar={config.avatar} />
+                      ) : (
+                        <>
+                          {["system"].includes(message.role) ? (
+                            <Avatar avatar="2699-fe0f" />
+                          ) : (
+                            <MaskAvatar
+                              avatar={session.mask.avatar}
+                              model={
+                                message.model || session.mask.modelConfig.model
                               }
                             />
-                          </>
-                        )}
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {showActions && (
+                      <div className={styles["chat-message-actions"]}>
+                        <div className={styles["chat-input-actions"]}>
+                          {message.streaming ? (
+                            <ChatAction
+                              text={Locale.Chat.Actions.Stop}
+                              icon={<StopIcon />}
+                              onClick={() => onUserStop(message.id ?? i)}
+                            />
+                          ) : (
+                            <>
+                              <ChatAction
+                                text={Locale.Chat.Actions.Retry}
+                                icon={<ResetIcon />}
+                                onClick={() => onResend(message)}
+                              />
+
+                              <ChatAction
+                                text={Locale.Chat.Actions.Delete}
+                                icon={<DeleteIcon />}
+                                onClick={() => onDelete(message.id ?? i)}
+                              />
+
+                              <ChatAction
+                                text={Locale.Chat.Actions.Pin}
+                                icon={<PinIcon />}
+                                onClick={() => onPinMessage(message)}
+                              />
+                              <ChatAction
+                                text={Locale.Chat.Actions.Copy}
+                                icon={<CopyIcon />}
+                                onClick={() =>
+                                  copyToClipboard(
+                                    getMessageTextContent(message).text,
+                                  )
+                                }
+                              />
+                            </>
+                          )}
+                        </div>
                       </div>
+                    )}
+                  </div>
+                  {showTyping && (
+                    <div className={styles["chat-message-status"]}>
+                      {Locale.Chat.Typing}
                     </div>
                   )}
-                </div>
-                {showTyping && (
-                  <div className={styles["chat-message-status"]}>
-                    {Locale.Chat.Typing}
+                  <div className={styles["chat-message-item"]}>
+                    {renderMessageContent(message)}
                   </div>
-                )}
-                <div className={styles["chat-message-item"]}>
-                  {renderMessageContent(message)}
-                </div>
 
-                <div className={styles["chat-message-action-date"]}>
-                  {isContext
-                    ? Locale.Chat.IsContext
-                    : message.date.toLocaleString()}
+                  <div className={styles["chat-message-action-date"]}>
+                    {isContext
+                      ? Locale.Chat.IsContext
+                      : message.date.toLocaleString()}
+                  </div>
                 </div>
               </div>
-            </div>
-            {shouldShowClearContextDivider && <ClearContextDivider />}
-          </Fragment>
-        );
-      })}
+              {shouldShowClearContextDivider && <ClearContextDivider />}
+            </Fragment>
+          );
+        })}
       </div>
-  
+
       <div className={styles["chat-input-panel"]}>
         <PromptHints prompts={promptHints} onPromptSelect={onPromptSelect} />
-  
+
         <ChatActions
           uploadImage={uploadImage}
           uploadFiles={uploadFiles}
@@ -1392,7 +1399,7 @@ function _Chat() {
               setPromptHints([]);
               return;
             }
-  
+
             inputRef.current?.focus();
             setUserInput("/");
             onSearch("");
@@ -1456,11 +1463,11 @@ function _Chat() {
           />
         </label>
       </div>
-  
+
       {showExport && (
         <ExportMessageModal onClose={() => setShowExport(false)} />
       )}
-  
+
       {isEditingMessage && (
         <EditMessageModal
           onClose={() => {
@@ -1468,7 +1475,7 @@ function _Chat() {
           }}
         />
       )}
-  
+
       {showUploadedFilesModal && (
         <UploadedFilesModal
           onClose={() => setShowUploadedFilesModal(false)}
@@ -1477,7 +1484,7 @@ function _Chat() {
           selectedFile={selectedFile}
         />
       )}
-  
+
       {isLoading && (
         <div className={styles["loading-spinner"]}>
           <LoadingIcon />
