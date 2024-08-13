@@ -1152,17 +1152,38 @@ function _Chat() {
     const chunkSize = "250";
     const chunkOverlap = "100";
 
+    const uploadedFileNames: string[] = [];
+
     for (const file of files) {
       await uploadFileToServer(file, chatStore, dbName, chunkSize, chunkOverlap);
-      setUploadedFiles((prevFiles) => [...prevFiles, file.name]);
+      uploadedFileNames.push(file.name);
     }
+
+    setUploadedFiles((prevFiles) => {
+      const newFiles = [...prevFiles, ...uploadedFileNames];
+      localStorage.setItem('uploadedFiles', JSON.stringify(newFiles)); // Save to localStorage
+      return newFiles;
+    });
 
     setIsLoading(false);
   }
 
   const handleFileSelect = (fileName: string) => {
     setSelectedFile(fileName);
+    localStorage.setItem('selectedFile', fileName); // Save to localStorage
   };
+
+  useEffect(() => {
+    const storedFiles = localStorage.getItem('uploadedFiles');
+    if (storedFiles) {
+      setUploadedFiles(JSON.parse(storedFiles));
+    }
+
+    const storedSelectedFile = localStorage.getItem('selectedFile');
+    if (storedSelectedFile) {
+      setSelectedFile(storedSelectedFile);
+    }
+  }, []);
 
   return (
     <div className={styles.chat} key={session.id}>
