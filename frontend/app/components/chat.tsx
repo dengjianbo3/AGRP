@@ -554,7 +554,8 @@ function UploadedFilesModal(props: {
   onClose: () => void;
   uploadedFiles: string[];
   onSelectFile: (fileName: string) => void;
-  selectedFile: string | null;
+  selectedTableFile: string | null;
+  selectedDocFile: string | null;
 }) {
   return (
     <div className="modal-mask">
@@ -578,7 +579,11 @@ function UploadedFilesModal(props: {
               key={index}
               title={file}
               subTitle={`Uploaded at ${new Date().toLocaleString()}`}
-              className={props.selectedFile === file ? styles.selected : ""}
+              className={
+                file === props.selectedTableFile || file === props.selectedDocFile
+                  ? styles.selected
+                  : ""
+              }
               onClick={() => props.onSelectFile(file)}
             />
           ))}
@@ -587,6 +592,7 @@ function UploadedFilesModal(props: {
     </div>
   );
 }
+
 
 // Chat component
 function _Chat() {
@@ -600,7 +606,8 @@ function _Chat() {
   const [showExport, setShowExport] = useState(false);
   const [showUploadedFilesModal, setShowUploadedFilesModal] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [selectedTableFile, setSelectedTableFile] = useState<string | null>(null);
+  const [selectedDocFile, setSelectedDocFile] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [userInput, setUserInput] = useState("");
@@ -690,44 +697,43 @@ function _Chat() {
   };
 
   // Function to handle user input and submit it to the server
-  const doSubmit = (userInput: string) => {
+  const doSubmit = async (userInput: string) => {
     if (userInput.trim() === "") return;
-
+  
     setIsLoading(true);
-
+  
     const userMessage = createMessage({
       role: "user",
       content: userInput,
       date: new Date().toISOString(),
       id: nanoid(),
     });
-
+  
     chatStore.addMessage(userMessage);
     setUserInput("");
-
+  
     const dbName = "test"; // Replace with your actual dbName value
-
-    let tableFileName = "";
-    let docFileName = "";
-
-    if (selectedFile) {
-      const fileParts = selectedFile.split(".");
-      const fileExtension = fileParts.pop()?.toLowerCase();
-      const fileNamePrefix = fileParts.join("."); // 获取文件名前缀
-      const tableExtensions = ["xls", "xlsx", "csv"];
-
-      if (fileExtension && tableExtensions.includes(fileExtension)) {
-        tableFileName = fileNamePrefix;
+  
+    const tableFileName = selectedTableFile ?? ""; // 使用空字符串作为默认值
+    const docFileName = selectedDocFile ?? ""; // 使用空字符串作为默认值
+  
+    try {
+      // 调用 sendQueryToServer 函数
+      await sendQueryToServer(userInput, chatStore, dbName, tableFileName, docFileName);
+      
+      // 这里你可以继续处理来自 sendQueryToServer 的响应，例如更新 UI 等
+    } catch (error) {
+      // 处理 unknown 类型的错误
+      if (error instanceof Error) {
+        console.error("Failed to submit query:", error.message);
       } else {
-        docFileName = fileNamePrefix;
+        console.error("Failed to submit query:", String(error));
       }
+    } finally {
+      setIsLoading(false);
     }
-
-    sendQueryToServer(userInput, chatStore, dbName, tableFileName, docFileName)
-      .finally(() => {
-        setIsLoading(false);
-      });
   };
+  
 
   const onPromptSelect = (prompt: RenderPrompt) => {
     setTimeout(() => {
@@ -752,34 +758,22 @@ function _Chat() {
   };
 
   useEffect(() => {
-    chatStore.updateCurrentSession((session) => {
-      const stopTiming = Date.now() - REQUEST_TIMEOUT_MS;
-      session.messages.forEach((m) => {
-        // check if should stop all stale messages
-        if (m.isError || new Date(m.date).getTime() < stopTiming) {
-          if (m.streaming) {
-            m.streaming = false;
-          }
-
-          if (m.content.length === 0) {
-            m.isError = true;
-            m.content = prettyObject({
-              error: true,
-              message: "empty response",
-            });
-          }
-        }
-      });
-
-      // auto sync mask config from global config
-      if (session.mask.syncGlobalConfig) {
-        console.log("[Mask] syncing from global, name = ", session.mask.name);
-        session.mask.modelConfig = { ...config.modelConfig };
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const storedFiles = localStorage.getItem("uploadedFiles");
+    if (storedFiles) {
+      setUploadedFiles(JSON.parse(storedFiles));
+    }
+  
+    const storedTableFile = localStorage.getItem("selectedTableFile");
+    if (storedTableFile) {
+      setSelectedTableFile(storedTableFile);
+    }
+  
+    const storedDocFile = localStorage.getItem("selectedDocFile");
+    if (storedDocFile) {
+      setSelectedDocFile(storedDocFile);
+    }
   }, []);
-
+  
   // check if should send message
   const onInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // if ArrowUp and no userInput, fill with last input
@@ -1169,19 +1163,45 @@ function _Chat() {
   }
 
   const handleFileSelect = (fileName: string) => {
-    setSelectedFile(fileName);
-    localStorage.setItem('selectedFile', fileName); // Save to localStorage
+    const fileParts = fileName.split(".");
+    const fileExtension = fileParts.pop()?.toLowerCase();
+  
+    if (fileExtension && ["xls", "xlsx", "csv"].includes(fileExtension)) {
+      // 如果已选择一个表格文件，先检查并提示
+      if (selectedTableFile) {
+        alert("You can only select one table file at a time. Please deselect the current table file first.");
+        return;
+      }
+      setSelectedTableFile(fileName);  // 更新表格文件选择
+      localStorage.setItem("selectedTableFile", fileName);  // 保存表格文件到 localStorage
+    } else if (fileExtension && ["doc", "docx", "pdf"].includes(fileExtension)) {
+      // 如果已选择一个文档文件，先检查并提示
+      if (selectedDocFile) {
+        alert("You can only select one document file at a time. Please deselect the current document file first.");
+        return;
+      }
+      setSelectedDocFile(fileName);  // 更新文档文件选择
+      localStorage.setItem("selectedDocFile", fileName);  // 保存文档文件到 localStorage
+    } else {
+      alert("Unsupported file type.");
+    }
   };
-
+  
+  
   useEffect(() => {
     const storedFiles = localStorage.getItem('uploadedFiles');
     if (storedFiles) {
       setUploadedFiles(JSON.parse(storedFiles));
     }
 
-    const storedSelectedFile = localStorage.getItem('selectedFile');
-    if (storedSelectedFile) {
-      setSelectedFile(storedSelectedFile);
+    const storedTableFile = localStorage.getItem('selectedTableFile');
+    if (storedTableFile) {
+      setSelectedTableFile(storedTableFile);
+    }
+
+    const storedDocFile = localStorage.getItem('selectedDocFile');
+    if (storedDocFile) {
+      setSelectedDocFile(storedDocFile);
     }
   }, []);
 
@@ -1247,11 +1267,11 @@ function _Chat() {
           )}
         </div>
 
-        <PromptToast
+        {/* <PromptToast
           showToast={!hitBottom}
           showModal={showPromptModal}
           setShowModal={setShowPromptModal}
-        />
+        /> */}
       </div>
 
       <div
@@ -1502,7 +1522,8 @@ function _Chat() {
           onClose={() => setShowUploadedFilesModal(false)}
           uploadedFiles={uploadedFiles}
           onSelectFile={handleFileSelect}
-          selectedFile={selectedFile}
+          selectedTableFile={selectedTableFile}  // 传递表格文件选择状态
+          selectedDocFile={selectedDocFile}      // 传递文档文件选择状态
         />
       )}
 
