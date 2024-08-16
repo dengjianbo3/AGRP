@@ -67,6 +67,72 @@ export async function uploadFileToServer(
   }
 }
 
+// export async function sendQueryToServer(
+//   userInput: string,
+//   chatStore: any,
+//   dbName: string,
+//   tableFileName: string,
+//   docFileName: string
+// ) {
+//   try {
+//     const url = `${API_BASE_URL}/query`;
+//     const response = await fetch(url, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/x-www-form-urlencoded",
+//       },
+//       body: new URLSearchParams({
+//         query: userInput,
+//         db_name: dbName,
+//         table_file_name: tableFileName,
+//         doc_file_name: docFileName,
+//       }),
+//     });
+
+//     if (!response.ok) {
+//       throw new Error('Network response was not ok: ' + response.statusText);
+//     }
+
+//     const data = await response.json();
+//     const responseMessageContent = data.answer || "No response";
+
+//     // 处理 base64 图片
+//     if (data.image) {
+//       const imageBlob = base64Image2Blob(data.image, 'image/png');
+//       const imageSrc = URL.createObjectURL(imageBlob);
+//       chatStore.addMessage(createMessage({
+//         role: 'assistant',
+//         content: [
+//           { type: 'text', text: "这是根据您的要求生成的图表" } as MultimodalContent,
+//           { type: 'image_url', image_url: { url: imageSrc } } as MultimodalContent
+//         ],
+//         date: new Date().toISOString(),
+//         id: nanoid(),
+//       } as ExtendedChatMessage));
+//     } else {
+//       chatStore.addMessage(createMessage({
+//         role: 'assistant',
+//         content: [{ type: 'text', text: responseMessageContent } as MultimodalContent],
+//         date: new Date().toISOString(),
+//         id: nanoid(),
+//       }));
+//     }
+//   } catch (error) {
+//     let errorMsg;
+//     if (error instanceof Error) {
+//       errorMsg = `Error occurred: ${error.message || "Unknown error"}`;
+//     } else {
+//       errorMsg = "An unknown error occurred";
+//     }
+
+//     chatStore.addMessage(createMessage({
+//       role: 'assistant',
+//       content: [{ type: 'text', text: errorMsg } as MultimodalContent],
+//       date: new Date().toISOString(),
+//       id: nanoid(),
+//     }));
+//   }
+// }
 export async function sendQueryToServer(
   userInput: string,
   chatStore: any,
@@ -98,13 +164,16 @@ export async function sendQueryToServer(
 
     // 处理 base64 图片
     if (data.image) {
+      // 使用 Base64 编码的图片数据来生成 Blob
       const imageBlob = base64Image2Blob(data.image, 'image/png');
       const imageSrc = URL.createObjectURL(imageBlob);
+      
+      // 将图片 Base64 数据和文本内容一起缓存到历史记录中
       chatStore.addMessage(createMessage({
         role: 'assistant',
         content: [
           { type: 'text', text: "这是根据您的要求生成的图表" } as MultimodalContent,
-          { type: 'image_url', image_url: { url: imageSrc } } as MultimodalContent
+          { type: 'image_url', image_url: { url: imageSrc, base64: data.image } } as MultimodalContent
         ],
         date: new Date().toISOString(),
         id: nanoid(),
@@ -133,6 +202,7 @@ export async function sendQueryToServer(
     }));
   }
 }
+
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method, body } = req;

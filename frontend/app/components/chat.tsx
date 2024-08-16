@@ -126,13 +126,17 @@ const renderMessageContent = (message: ExtendedChatMessage) => {
         if (isTextContent(content)) {
           return <Markdown key={index} content={content.text} />;
         } else if (isImageContent(content)) {
-          return <img key={index} src={content.image_url.url} alt={`Image from server ${index}`} />;
+          const imageSrc = (content.image_url as { url: string; base64?: string }).base64
+            ? `data:image/png;base64,${(content.image_url as { url: string; base64?: string }).base64}`
+            : content.image_url.url;
+          return <img key={index} src={imageSrc} alt={`Image from server ${index}`} />;
         }
         return null;
       })}
     </>
   );
 };
+
 
 function PromptToast(props: {
   showToast?: boolean;
@@ -1167,25 +1171,28 @@ function _Chat() {
     const fileExtension = fileParts.pop()?.toLowerCase();
   
     if (fileExtension && ["xls", "xlsx", "csv"].includes(fileExtension)) {
-      // 如果已选择一个表格文件，先检查并提示
-      if (selectedTableFile) {
-        alert("You can only select one table file at a time. Please deselect the current table file first.");
-        return;
+      // 如果用户选择了已选中的表格文件，取消选择
+      if (selectedTableFile === fileName) {
+        setSelectedTableFile(null);
+        localStorage.removeItem("selectedTableFile"); // 从 localStorage 中移除
+      } else {
+        setSelectedTableFile(fileName); // 更新表格文件选择
+        localStorage.setItem("selectedTableFile", fileName); // 保存表格文件到 localStorage
       }
-      setSelectedTableFile(fileName);  // 更新表格文件选择
-      localStorage.setItem("selectedTableFile", fileName);  // 保存表格文件到 localStorage
     } else if (fileExtension && ["doc", "docx", "pdf"].includes(fileExtension)) {
-      // 如果已选择一个文档文件，先检查并提示
-      if (selectedDocFile) {
-        alert("You can only select one document file at a time. Please deselect the current document file first.");
-        return;
+      // 如果用户选择了已选中的文档文件，取消选择
+      if (selectedDocFile === fileName) {
+        setSelectedDocFile(null);
+        localStorage.removeItem("selectedDocFile"); // 从 localStorage 中移除
+      } else {
+        setSelectedDocFile(fileName); // 更新文档文件选择
+        localStorage.setItem("selectedDocFile", fileName); // 保存文档文件到 localStorage
       }
-      setSelectedDocFile(fileName);  // 更新文档文件选择
-      localStorage.setItem("selectedDocFile", fileName);  // 保存文档文件到 localStorage
     } else {
       alert("Unsupported file type.");
     }
   };
+  
   
   
   useEffect(() => {
